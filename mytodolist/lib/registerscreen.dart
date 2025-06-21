@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:mytodolist/loginscreen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -54,19 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 obscureText: true,
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  Text('Remember Me'),
-                  SizedBox(width: 10),
-                  Checkbox(
-                    value: false,
-                    onChanged: (bool? value) {
-                      // Handle checkbox state change
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
+
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -78,12 +67,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: const Text('Register'),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                },
                 child: Text(
                   ""
-                  'Already have an account? Login up',
+                  'Already have an account? Login',
                   style: TextStyle(
                     color: Colors.blue,
                     // decoration: TextDecoration.underline,
@@ -154,11 +148,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  /// Register a new user account to the server
+  ///
+  /// This function will send a POST request to the server with the
+  /// provided [email] and [password]. If the response status code
+  /// is 200, it will then decode the JSON response and check if
+  /// the registration was successful. If it was, it will show a
+  /// success message. Otherwise, it will show an error message with
+  /// the status message from the server.
   void registerAccount(String email, String password) {
     // TODO: implement registerAccount
     http
         .post(
-          Uri.parse('http://10.19.90.70/mytodolist/php/register_user.php'),
+          Uri.parse('http://192.168.0.145/mytodolist/php/register_user.php'),
           body: {'email': email, 'password': password},
         )
         .then((response) {
@@ -169,16 +171,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Registration successful')),
               );
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    'Registration ${jsonResponse['status']}',
-                  ),
+                  content: Text('Registration ${jsonResponse['status']}'),
                 ),
               );
             }
-          } 
+          }
         });
   }
 }
