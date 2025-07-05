@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mytodolist/loginscreen.dart';
+import 'package:mytodolist/myconfig.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -160,7 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // TODO: implement registerAccount
     http
         .post(
-          Uri.parse('http://192.168.0.145/mytodolist/php/register_user.php'),
+          Uri.parse('${MyConfig.apiUrl}register_user.php'),
           body: {'email': email, 'password': password},
         )
         .then((response) {

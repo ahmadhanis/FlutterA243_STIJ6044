@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mytodolist/todoscreen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final String? userId;
+  final String? userEmail;
+
+  const MainScreen({super.key, required this.userId, required this.userEmail});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -16,12 +19,27 @@ class _MainScreenState extends State<MainScreen> {
         title: const Text('Main Screen'),
         backgroundColor: Colors.blue,
       ),
-      body: const Center(child: Text('Main Screen')),
+      body: Center(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            Text('Welcome, ${widget.userEmail ?? 'User'}!'),
+            const SizedBox(height: 20),
+            Text('Your User ID: ${widget.userId ?? 'N/A'}'),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const TodoScreen()),
+            MaterialPageRoute(
+              builder:
+                  (context) => TodoScreen(
+                    userEmail: widget.userEmail.toString(),
+                    userId: widget.userId.toString(),
+                  ),
+            ),
           );
         },
         child: const Icon(Icons.add),

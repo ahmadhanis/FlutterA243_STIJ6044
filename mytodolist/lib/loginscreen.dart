@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:mytodolist/mainscreen.dart';
+import 'package:mytodolist/myconfig.dart';
 import 'package:mytodolist/registerscreen.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -133,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // Send a POST request to the server with the email and password
     http
         .post(
-          Uri.parse('http://192.168.0.145/mytodolist/php/login_user.php'),
+          Uri.parse('${MyConfig.apiUrl}login_user.php'),
           body: {'email': email, 'password': password},
         )
         .then((response) {
@@ -142,12 +143,18 @@ class _LoginScreenState extends State<LoginScreen> {
             // Login successful, navigate to home screen
             var jsonResponse = jsonDecode(response.body);
             if (jsonResponse['status'] == 'success') {
+              String userId = jsonResponse['data'][0]['user_id'];
+              String email = jsonResponse['data'][0]['user_email'];
+
               ScaffoldMessenger.of(
                 context,
               ).showSnackBar(SnackBar(content: Text('Login successful')));
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => MainScreen()),
+                MaterialPageRoute(
+                  builder:
+                      (context) => MainScreen(userEmail: email, userId: userId),
+                ),
               );
             } else {
               ScaffoldMessenger.of(
