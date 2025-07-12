@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mytodolist/splashscreen.dart';
+import 'package:mytodolist2/splashscreen.dart';
 
 void main() {
   runApp(const MainApp());

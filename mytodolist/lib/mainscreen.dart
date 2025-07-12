@@ -1,5 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:mytodolist/myconfig.dart';
+import 'package:mytodolist/todo.dart';
 import 'package:mytodolist/todoscreen.dart';
+import 'package:http/http.dart' as http;
 
 class MainScreen extends StatefulWidget {
   final String? userId;
@@ -12,12 +17,28 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  List<MyTodo> todoList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadTodos();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Main Screen'),
         backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              loadTodos();
+            },
+          ),
+        ],
       ),
       body: Center(
         child: Column(
@@ -58,5 +79,34 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
     );
+  }
+
+  void loadTodos() {
+    http
+        .get(
+          Uri.parse('${MyConfig.apiUrl}load_todos.php?userid=${widget.userId}'),
+        )
+        .then((response) {
+          if (response.statusCode == 200) {
+            var data = jsonDecode(response.body);
+            if (data['status'] == 'success') {
+              todoList.clear();
+              for (var item in data['data']) {
+                // print(item.toString());
+                todoList.add(
+                  MyTodo.fromJson(item),
+                ); // Convert JSON to MyTodo object
+              }
+              setState(() {}); // Refresh the UI
+            } else {
+              print('Failed to load todos: ${data['message']}');
+            }
+
+            // Handle the response data
+          }
+        })
+        .catchError((error) {
+          print('Error loading todos: $error');
+        });
   }
 }

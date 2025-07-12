@@ -4,7 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:mytodolist/myconfig.dart';
+import 'package:mytodolist2/myconfig.dart';
 
 class TodoScreen extends StatefulWidget {
   final String userId; // Optional user ID
@@ -96,15 +96,14 @@ class _TodoScreenState extends State<TodoScreen> {
 
               DropdownButtonFormField<String>(
                 value: selectedCategory,
-                items:
-                    categories
-                        .map(
-                          (category) => DropdownMenuItem(
-                            value: category,
-                            child: Text(category),
-                          ),
-                        )
-                        .toList(),
+                items: categories
+                    .map(
+                      (category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      ),
+                    )
+                    .toList(),
                 onChanged: (value) {
                   setState(() {
                     selectedCategory = value;
@@ -122,21 +121,20 @@ class _TodoScreenState extends State<TodoScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               Column(
-                children:
-                    priorities.map((priority) {
-                      return ListTile(
-                        title: Text(priority),
-                        leading: Radio<String>(
-                          value: priority,
-                          groupValue: _selectedPriority,
-                          onChanged: (String? value) {
-                            setState(() {
-                              _selectedPriority = value;
-                            });
-                          },
-                        ),
-                      );
-                    }).toList(),
+                children: priorities.map((priority) {
+                  return ListTile(
+                    title: Text(priority),
+                    leading: Radio<String>(
+                      value: priority,
+                      groupValue: _selectedPriority,
+                      onChanged: (String? value) {
+                        setState(() {
+                          _selectedPriority = value;
+                        });
+                      },
+                    ),
+                  );
+                }).toList(),
               ),
 
               CheckboxListTile(
@@ -216,26 +214,25 @@ class _TodoScreenState extends State<TodoScreen> {
     //show a confirmation dialog
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Confirm Submission'),
-            content: const Text('Are you sure you want to submit your todo?'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  submitTodo();
-                },
-                child: const Text('Submit'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Submission'),
+        content: const Text('Are you sure you want to submit your todo?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              submitTodo();
+            },
+            child: const Text('Submit'),
+          ),
+        ],
+      ),
     );
   }
 
