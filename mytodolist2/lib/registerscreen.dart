@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:mytodolist2/loginscreen.dart';
 import 'package:mytodolist2/myconfig.dart';
@@ -13,177 +14,223 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  TextEditingController emailController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  TextEditingController reenterPasswordController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final reenterPasswordController = TextEditingController();
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-        backgroundColor: Colors.blue,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 5),
-              TextField(
-                controller: passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-              ),
-              SizedBox(height: 5),
-              TextField(
-                controller: reenterPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Reenter Password',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-              ),
-              const SizedBox(height: 10),
+    final textScale = MediaQuery.of(context).textScaleFactor;
 
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Handle login logic here
-                    registerDialog(context);
-                  },
-                  child: const Text('Register'),
+    return Scaffold(
+      backgroundColor: const Color(0xFFE3F2FD),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 600;
+
+          return Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isWide ? 500 : double.infinity,
                 ),
-              ),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
-                  );
-                },
-                child: Text(
-                  ""
-                  'Already have an account? Login',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    // decoration: TextDecoration.underline,
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  textAlign: TextAlign.center,
+                  elevation: 10,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 25,
+                      vertical: 35,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_add_alt_1,
+                          size: 60,
+                          color: Colors.blue,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          "Create Account",
+                          style: GoogleFonts.poppins(
+                            fontSize: 22 * textScale,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[800],
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          "Register a new MyTodoList account",
+                          style: GoogleFonts.poppins(fontSize: 14 * textScale),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email),
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 15),
+                        TextField(
+                          controller: passwordController,
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icon(Icons.lock),
+                            border: OutlineInputBorder(),
+                          ),
+                          obscureText: true,
+                        ),
+                        const SizedBox(height: 15),
+                        TextField(
+                          controller: reenterPasswordController,
+                          decoration: const InputDecoration(
+                            labelText: 'Re-enter Password',
+                            prefixIcon: Icon(Icons.lock_outline),
+                            border: OutlineInputBorder(),
+                          ),
+                          obscureText: true,
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: isLoading
+                                ? null
+                                : () => registerDialog(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: isLoading
+                                ? const CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  )
+                                : const Text('Register'),
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const LoginScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Already have an account? Login',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14 * textScale,
+                              color: Colors.blue[700],
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
   void registerDialog(BuildContext context) {
-    String email = emailController.text;
+    String email = emailController.text.trim();
     String password = passwordController.text;
     String reenterPassword = reenterPasswordController.text;
+
     if (email.isEmpty || password.isEmpty || reenterPassword.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Please fill all fields')));
+      showSnackBar('Please fill all fields');
       return;
     }
-    if (!RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-    ).hasMatch(email)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Please enter a valid email')));
+
+    if (!RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,4}$').hasMatch(email)) {
+      showSnackBar('Please enter a valid email');
       return;
     }
-    if (password != reenterPassword) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Passwords do not match')));
-      return;
-    }
+
     if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Password must be at least 6 characters')),
-      );
+      showSnackBar('Password must be at least 6 characters');
       return;
     }
+
+    if (password != reenterPassword) {
+      showSnackBar('Passwords do not match');
+      return;
+    }
+
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Are you sure?'),
-          content: Text('Register new account with  $email'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                registerAccount(email, password);
-              },
-              child: Text('Yes'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('No'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => AlertDialog(
+        title: const Text('Confirm Registration'),
+        content: Text('Register new account with email:\n$email'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              registerAccount(email, password);
+            },
+            child: const Text('Yes'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('No'),
+          ),
+        ],
+      ),
     );
   }
 
-  /// Register a new user account to the server
-  ///
-  /// This function will send a POST request to the server with the
-  /// provided [email] and [password]. If the response status code
-  /// is 200, it will then decode the JSON response and check if
-  /// the registration was successful. If it was, it will show a
-  /// success message. Otherwise, it will show an error message with
-  /// the status message from the server.
-  void registerAccount(String email, String password) {
-    // TODO: implement registerAccount
-    http
-        .post(
-          Uri.parse('${MyConfig.apiUrl}register_user.php'),
-          body: {'email': email, 'password': password},
-        )
-        .then((response) {
-          print(response.body);
-          if (response.statusCode == 200) {
-            var jsonResponse = jsonDecode(response.body);
-            if (jsonResponse['status'] == 'success') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Registration successful')),
-              );
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Registration ${jsonResponse['status']}'),
-                ),
-              );
-            }
-          }
-        });
+  void registerAccount(String email, String password) async {
+    setState(() => isLoading = true);
+
+    try {
+      final response = await http.post(
+        Uri.parse('${MyConfig.apiUrl}register_user.php'),
+        body: {'email': email, 'password': password},
+      );
+
+      if (response.statusCode == 200) {
+        var jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['status'] == 'success') {
+          showSnackBar('Registration successful');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
+        } else {
+          showSnackBar('Registration failed: ${jsonResponse['status']}');
+        }
+      } else {
+        showSnackBar('Server error');
+      }
+    } catch (e) {
+      showSnackBar('Error: $e');
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void showSnackBar(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 }

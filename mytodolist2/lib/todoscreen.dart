@@ -1,14 +1,12 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:mytodolist2/myconfig.dart';
 
 class TodoScreen extends StatefulWidget {
-  final String userId; // Optional user ID
-  final String userEmail; // Optional user email
+  final String userId;
+  final String userEmail;
 
   const TodoScreen({super.key, required this.userId, required this.userEmail});
 
@@ -17,16 +15,17 @@ class TodoScreen extends StatefulWidget {
 }
 
 class _TodoScreenState extends State<TodoScreen> {
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController descController = TextEditingController();
-  final TextEditingController dateController = TextEditingController();
+  final titleController = TextEditingController();
+  final descController = TextEditingController();
+  final dateController = TextEditingController();
 
   DateTime? selectedDateTime;
-  String? selectedCategory = 'Work'; // Default category
+  String? selectedCategory = 'Work';
   bool isCompleted = false;
   bool isReminderEnabled = false;
   final List<String> priorities = ['Important', 'Normal', 'Not Important'];
-  String? _selectedPriority = 'Important'; // default selected
+  String? _selectedPriority = 'Important';
+
   final List<String> categories = [
     'Work',
     'Personal',
@@ -52,145 +51,146 @@ class _TodoScreenState extends State<TodoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width > 600;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Todo Form'),
+        title: const Text('Create Todo'),
         backgroundColor: Colors.blue,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Todo Title',
-                ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isWide ? 600 : double.infinity,
               ),
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: dateController,
-                readOnly: true,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Select Date & Time',
-                ),
-                onTap: () async {
-                  await _pickDateTime();
-                },
-              ),
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: descController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Description',
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              DropdownButtonFormField<String>(
-                value: selectedCategory,
-                items: categories
-                    .map(
-                      (category) => DropdownMenuItem(
-                        value: category,
-                        child: Text(category),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildTextField(titleController, 'Todo Title'),
+                  const SizedBox(height: 15),
+                  _buildDateField(),
+                  const SizedBox(height: 15),
+                  _buildTextField(descController, 'Description', maxLines: 4),
+                  const SizedBox(height: 15),
+                  _buildDropdownCategory(),
+                  const SizedBox(height: 15),
+                  const Text(
+                    'Priority',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ...priorities.map(_buildPriorityRadio).toList(),
+                  const SizedBox(height: 10),
+                  CheckboxListTile(
+                    title: const Text('Mark as Completed'),
+                    value: isCompleted,
+                    onChanged: (val) =>
+                        setState(() => isCompleted = val ?? false),
+                  ),
+                  SwitchListTile(
+                    title: const Text('Enable Reminder'),
+                    value: isReminderEnabled,
+                    onChanged: (val) => setState(() => isReminderEnabled = val),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.send),
+                      label: const Text('Submit'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedCategory = value;
-                  });
-                },
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Category',
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              const Text(
-                'Priority:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Column(
-                children: priorities.map((priority) {
-                  return ListTile(
-                    title: Text(priority),
-                    leading: Radio<String>(
-                      value: priority,
-                      groupValue: _selectedPriority,
-                      onChanged: (String? value) {
-                        setState(() {
-                          _selectedPriority = value;
-                        });
-                      },
+                      onPressed: _handleSubmit,
                     ),
-                  );
-                }).toList(),
+                  ),
+                ],
               ),
-
-              CheckboxListTile(
-                title: const Text('Mark as Completed'),
-                value: isCompleted,
-                onChanged: (value) {
-                  setState(() {
-                    isCompleted = value ?? false;
-                  });
-                },
-              ),
-
-              SwitchListTile(
-                title: const Text('Enable Reminder'),
-                value: isReminderEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    isReminderEnabled = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _handleSubmit,
-                  child: const Text('Submit'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label, {
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Widget _buildDateField() {
+    return TextField(
+      controller: dateController,
+      readOnly: true,
+      onTap: _pickDateTime,
+      decoration: InputDecoration(
+        labelText: 'Select Date & Time',
+        prefixIcon: const Icon(Icons.calendar_today),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Widget _buildDropdownCategory() {
+    return DropdownButtonFormField<String>(
+      value: selectedCategory,
+      items: categories
+          .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+          .toList(),
+      onChanged: (val) => setState(() => selectedCategory = val),
+      decoration: InputDecoration(
+        labelText: 'Category',
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Widget _buildPriorityRadio(String priority) {
+    return ListTile(
+      title: Text(priority),
+      leading: Radio<String>(
+        value: priority,
+        groupValue: _selectedPriority,
+        onChanged: (val) => setState(() => _selectedPriority = val),
+      ),
+    );
+  }
+
   Future<void> _pickDateTime() async {
-    DateTime? pickedDate = await showDatePicker(
+    final now = DateTime.now();
+
+    final pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedDateTime ?? DateTime.now(),
-      firstDate: DateTime(2000),
+      initialDate: selectedDateTime ?? now,
+      firstDate: now.subtract(const Duration(days: 1)),
       lastDate: DateTime(2101),
     );
 
     if (pickedDate == null) return;
 
-    TimeOfDay? pickedTime = await showTimePicker(
+    final pickedTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(selectedDateTime ?? DateTime.now()),
+      initialTime: TimeOfDay.fromDateTime(selectedDateTime ?? now),
     );
 
     if (pickedTime == null) return;
 
-    final newDateTime = DateTime(
+    final dateTime = DateTime(
       pickedDate.year,
       pickedDate.month,
       pickedDate.day,
@@ -199,8 +199,8 @@ class _TodoScreenState extends State<TodoScreen> {
     );
 
     setState(() {
-      selectedDateTime = newDateTime;
-      dateController.text = newDateTime.toString();
+      selectedDateTime = dateTime;
+      dateController.text = DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
     });
   }
 
@@ -211,22 +211,20 @@ class _TodoScreenState extends State<TodoScreen> {
       );
       return;
     }
-    //show a confirmation dialog
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Confirm Submission'),
         content: const Text('Are you sure you want to submit your todo?'),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
+            onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.pop(context);
               submitTodo();
             },
             child: const Text('Submit'),
@@ -236,46 +234,46 @@ class _TodoScreenState extends State<TodoScreen> {
     );
   }
 
-  void submitTodo() {
-    //submit the todo data to tbl_todos table
-    String title = titleController.text.trim();
-    String description = descController.text.trim();
-    String date = dateController.text.trim();
-    String category = selectedCategory ?? 'Work';
-    String priority = _selectedPriority ?? 'Important';
-    bool completed = isCompleted;
-    bool reminderEnabled = isReminderEnabled;
-    //send the data to the server using http post request insert_todo.php
-    http
-        .post(
-          Uri.parse('${MyConfig.apiUrl}insert_todo.php'),
-          body: {
-            'userid': widget.userId, // Replace with actual user ID
-            'useremail': widget.userEmail, // Replace with actual user email
-            'title': title,
-            'description': description,
-            'date': date,
-            'category': category,
-            'priority': priority,
-            'completed': completed.toString(),
-            'reminder_enabled': reminderEnabled.toString(),
-          },
-        )
-        .then((response) {
-          print(response.body);
-          if (response.statusCode == 200) {
-            var jsonResponse = jsonDecode(response.body);
-            if (jsonResponse['status'] == 'success') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Todo added successfully')),
-              );
-              Navigator.pop(context); // Close the TodoScreen
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: ${jsonResponse['status']}')),
-              );
-            }
-          }
-        });
+  void submitTodo() async {
+    final title = titleController.text.trim();
+    final description = descController.text.trim();
+    final date = dateController.text.trim();
+    final category = selectedCategory ?? 'Work';
+    final priority = _selectedPriority ?? 'Important';
+
+    try {
+      final response = await http.post(
+        Uri.parse('${MyConfig.apiUrl}insert_todo.php'),
+        body: {
+          'userid': widget.userId,
+          'useremail': widget.userEmail,
+          'title': title,
+          'description': description,
+          'date': date,
+          'category': category,
+          'priority': priority,
+          'completed': isCompleted.toString(),
+          'reminder_enabled': isReminderEnabled.toString(),
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        if (json['status'] == 'success') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Todo added successfully')),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: ${json['status']}')));
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error submitting: $e')));
+    }
   }
 }

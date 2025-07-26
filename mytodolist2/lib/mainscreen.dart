@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 import 'package:mytodolist2/edittodoscreen.dart';
 import 'package:mytodolist2/myconfig.dart';
 import 'package:mytodolist2/todo.dart';
 import 'package:mytodolist2/todoscreen.dart';
-import 'package:http/http.dart' as http;
 
 class MainScreen extends StatefulWidget {
   final String? userId;
@@ -22,11 +21,10 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   List<MyTodo> todoList = [];
   String status = "Loading todos...";
-  final df = DateFormat('dd-MM-yyyy hh:mm a');
+  final df = DateFormat('dd MMM yyyy hh:mm a');
   int numberofResult = 0;
   int numberOfPage = 0;
   int currentPage = 1;
-  var color;
 
   @override
   void initState() {
@@ -36,236 +34,301 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isWideScreen = MediaQuery.of(context).size.width > 600;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Main Screen'),
+        title: const Text('MyTodoList'),
         backgroundColor: Colors.blue,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              loadTodos();
-            },
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: loadTodos),
         ],
-      ),
-      body: Center(
-        child: Column(
-          children: [
-            todoList.isEmpty
-                ? Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error, size: 50, color: Colors.red),
-                        Text(
-                          status,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 20),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  )
-                : Expanded(
-                    child: ListView(
-                      children: todoList.map((todo) {
-                        return ListTile(
-                          leading: Icon(
-                            todo.todoCompleted == 'true'
-                                ? Icons.check_box
-                                : Icons.square,
-                            color: todo.todoCompleted == 'true'
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                          title: Text(todo.todoTitle.toString()),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(todo.todoDesc.toString()),
-                              Text(
-                                'Due: ${df.format(DateTime.parse(todo.todoDate.toString()))}',
-                              ),
-                            ],
-                          ),
-                          trailing: Column(
-                            children: [
-                              GestureDetector(
-                                child: Icon(Icons.delete, color: Colors.red),
-                                onTap: () {
-                                  deleteDialog(todo);
-                                },
-                              ),
-                              const SizedBox(height: 4),
-                              GestureDetector(
-                                child: Icon(Icons.edit, color: Colors.blue),
-                                onTap: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EditTodoScreen(
-                                        userId: widget.userId.toString(),
-                                        userEmail: widget.userEmail.toString(),
-                                        todo: todo,
-                                      ),
-                                    ),
-                                  );
-                                  loadTodos(); // Reload todos after editing
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-            SizedBox(
-              height: 60,
-              // height: screenHeight * 0.05,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: numberOfPage,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  color = (currentPage - 1) == index
-                      ? Colors.red
-                      : Colors.black;
-                  return TextButton(
-                    onPressed: () {
-                      currentPage = index + 1;
-                      loadTodos();
-                    },
-                    child: Text(
-                      (index + 1).toString(),
-                      style: TextStyle(color: color, fontSize: 18),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TodoScreen(
-                userEmail: widget.userEmail.toString(),
-                userId: widget.userId.toString(),
-              ),
-            ),
-          );
-          loadTodos(); // Reload todos after adding a new one
-        },
-        child: const Icon(Icons.add),
       ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
-          children: const [
-            DrawerHeader(
+          children: [
+            const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Drawer Header'),
+              child: Text(
+                'Welcome',
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
             ),
-            ListTile(title: Text('Item 1'), onTap: null),
-            ListTile(title: Text('Item 2'), onTap: null),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () => Navigator.pop(context),
+            ),
           ],
         ),
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 10.0,
+              ),
+              child: Column(
+                children: [
+                  if (todoList.isEmpty)
+                    Expanded(
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.inbox,
+                              size: 70,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              status,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: todoList.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final todo = todoList[index];
+                          final isCompleted = todo.todoCompleted == 'true';
+
+                          return Card(
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        isCompleted
+                                            ? Icons.check_circle
+                                            : Icons.radio_button_unchecked,
+                                        color: isCompleted
+                                            ? Colors.green
+                                            : Colors.orange,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          todo.todoTitle ?? 'No Title',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Tooltip(
+                                            message: "Edit",
+                                            child: IconButton(
+                                              icon: const Icon(
+                                                Icons.edit,
+                                                color: Colors.blue,
+                                              ),
+                                              onPressed: () async {
+                                                await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        EditTodoScreen(
+                                                          userId:
+                                                              widget.userId!,
+                                                          userEmail:
+                                                              widget.userEmail!,
+                                                          todo: todo,
+                                                        ),
+                                                  ),
+                                                );
+                                                loadTodos();
+                                              },
+                                            ),
+                                          ),
+                                          Tooltip(
+                                            message: "Delete",
+                                            child: IconButton(
+                                              icon: const Icon(
+                                                Icons.delete,
+                                                color: Colors.red,
+                                              ),
+                                              onPressed: () =>
+                                                  deleteDialog(todo),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    todo.todoDesc ?? '',
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Due: ${df.format(DateTime.parse(todo.todoDate ?? ""))}',
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  if (numberOfPage > 1)
+                    SizedBox(
+                      height: 48,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: numberOfPage,
+                        itemBuilder: (context, index) {
+                          final isSelected = currentPage == index + 1;
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isSelected
+                                    ? Colors.blue
+                                    : Colors.grey[300],
+                                foregroundColor: isSelected
+                                    ? Colors.white
+                                    : Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  currentPage = index + 1;
+                                });
+                                loadTodos();
+                              },
+                              child: Text('${index + 1}'),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TodoScreen(
+                userEmail: widget.userEmail!,
+                userId: widget.userId!,
+              ),
+            ),
+          );
+          loadTodos();
+        },
+        icon: const Icon(Icons.add),
+        label: const Text("Add Todo"),
       ),
     );
   }
 
-  void loadTodos() {
-    http
-        .get(
-          Uri.parse(
-            '${MyConfig.apiUrl}load_todos.php?userid=${widget.userId}&pageno=$currentPage',
-          ),
-        )
-        .then((response) {
-          if (response.statusCode == 200) {
-            var data = jsonDecode(response.body);
-            log(data.toString());
-            todoList.clear();
-            if (data['status'] == 'success') {
-              for (var item in data['data']) {
-                // print(item.toString());
-                //add each todo item to the todoList array object
-                todoList.add(
-                  MyTodo.fromJson(item),
-                ); // Convert JSON to MyTodo object
-                status = "Todos loaded successfully";
-                numberofResult = data['number_of_result'];
-                numberOfPage = data['number_of_page'];
-                currentPage = data['current_page'];
-              }
-            } else {
-              print('Failed to load todos: ${data['message']}');
-              status = "'No todos found\nPlease add some todos'";
-            }
-            setState(() {}); // Refresh the UI
-            // Handle the response data
+  void loadTodos() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '${MyConfig.apiUrl}load_todos.php?userid=${widget.userId}&pageno=$currentPage',
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        todoList.clear();
+        if (data['status'] == 'success') {
+          for (var item in data['data']) {
+            todoList.add(MyTodo.fromJson(item));
           }
-        })
-        .catchError((error) {
-          print('Error loading todos: $error');
-        });
+          status = "Todos loaded successfully";
+          numberofResult = data['number_of_result'];
+          numberOfPage = data['number_of_page'];
+          currentPage = data['current_page'];
+        } else {
+          status = "No todos found.\nPlease add some todos.";
+        }
+        setState(() {});
+      }
+    } catch (e) {
+      log("Error loading todos: $e");
+      status = "Failed to load todos.";
+      setState(() {});
+    }
   }
 
   void deleteDialog(MyTodo todo) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Delete this Todo?'),
-          content: Text('Are you sure you want to delete "${todo.todoTitle}"?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                deleteTodo(todo);
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Todo'),
+        content: Text('Are you sure you want to delete "${todo.todoTitle}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              deleteTodo(todo);
+              Navigator.pop(context);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 
-  void deleteTodo(MyTodo todo) {
-    http
-        .post(
-          Uri.parse('${MyConfig.apiUrl}delete_todo.php'),
-          body: {'todo_id': todo.todoId, 'user_id': todo.userId},
-        )
-        .then((response) {
-          if (response.statusCode == 200) {
-            var data = jsonDecode(response.body);
-            log(data.toString());
-            if (data['status'] == 'success') {
-              // Remove the todo from the list
-              todoList.remove(todo);
-              status = "Todo deleted successfully";
-              loadTodos(); // Reload todos after deletion
-            } else {
-              print('Failed to delete todo: ${data['message']}');
-              status = "Failed to delete todo";
-            }
-            setState(() {}); // Refresh the UI
-          } else {
-            print('Error deleting todo: ${response.statusCode}');
-          }
-        });
+  void deleteTodo(MyTodo todo) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${MyConfig.apiUrl}delete_todo.php'),
+        body: {'todo_id': todo.todoId, 'user_id': todo.userId},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success') {
+          loadTodos();
+        } else {
+          status = "Failed to delete todo.";
+          setState(() {});
+        }
+      }
+    } catch (e) {
+      log("Delete error: $e");
+    }
   }
 }
