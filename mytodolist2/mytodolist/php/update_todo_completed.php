@@ -1,4 +1,6 @@
 <?php
+error_reporting( 0 );
+header( 'Access-Control-Allow-Origin: *' );
 include_once( 'dbconnect.php' );
 
 $todoId = $_POST[ 'todo_id' ];
