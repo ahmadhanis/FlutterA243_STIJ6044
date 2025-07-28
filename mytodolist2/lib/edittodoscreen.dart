@@ -75,7 +75,15 @@ class _EditTodoScreenState extends State<EditTodoScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Todo'),
-        backgroundColor: Colors.blue,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF90CAF9), Color(0xFF0D47A1)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -117,12 +125,14 @@ class _EditTodoScreenState extends State<EditTodoScreen> {
                   SizedBox(
                     height: 50,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.save),
-                      label: const Text('Save Changes'),
+                      icon: const Icon(Icons.save_rounded),
+                      label: const Text('Save Todo'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        foregroundColor: Colors.white,
+                        backgroundColor: const Color(0xFF0D47A1),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       onPressed: _handleSubmit,
@@ -192,10 +202,16 @@ class _EditTodoScreenState extends State<EditTodoScreen> {
 
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
+    final firstDate = now.subtract(const Duration(days: 1));
+    final initialDate =
+        selectedDateTime != null && selectedDateTime!.isAfter(firstDate)
+        ? selectedDateTime!
+        : now;
+
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedDateTime ?? now,
-      firstDate: now.subtract(const Duration(days: 1)),
+      initialDate: initialDate,
+      firstDate: firstDate,
       lastDate: DateTime(2101),
     );
 
@@ -203,7 +219,7 @@ class _EditTodoScreenState extends State<EditTodoScreen> {
 
     final pickedTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(selectedDateTime ?? now),
+      initialTime: TimeOfDay.fromDateTime(initialDate),
     );
 
     if (pickedTime == null) return;
@@ -259,6 +275,13 @@ class _EditTodoScreenState extends State<EditTodoScreen> {
     final category = selectedCategory ?? 'Work';
     final priority = _selectedPriority ?? 'Important';
 
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
     try {
       final response = await http.post(
         Uri.parse('${MyConfig.apiUrl}update_todo.php'),
@@ -276,23 +299,30 @@ class _EditTodoScreenState extends State<EditTodoScreen> {
         },
       );
 
+      Navigator.pop(context); // Close loading dialog
+
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         if (json['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Todo updated successfully')),
+            const SnackBar(content: Text('✅ Todo updated successfully')),
           );
-          Navigator.pop(context);
+          Navigator.pop(context); // Close the edit screen
         } else {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Error: ${json['status']}')));
+          ).showSnackBar(SnackBar(content: Text('❌ Error: ${json['status']}')));
         }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('❌ Server error while updating.')),
+        );
       }
     } catch (e) {
+      Navigator.pop(context); // Ensure dialog is closed on error
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text('⚠️ Error: $e')));
     }
   }
 }

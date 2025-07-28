@@ -26,10 +26,14 @@ class _MainScreenState extends State<MainScreen> {
   int numberOfPage = 0;
   int currentPage = 1;
   bool isLoading = false; // Add to your state class
+  int selectedMonth = DateTime.now().month;
+  int selectedYear = DateTime.now().year;
+  final searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    loadTodos();
+    loadTodos(month: selectedMonth, year: selectedYear);
   }
 
   void showDetailsDialog(MyTodo todo) {
@@ -75,10 +79,11 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     const SizedBox(height: 20),
                     Divider(),
-                    CheckboxListTile(
+                    SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
                       title: const Text("Mark as Completed"),
                       value: localCompleted,
+                      activeColor: Theme.of(context).colorScheme.primary,
                       onChanged: (val) async {
                         if (val != null) {
                           final confirm = await showDialog<bool>(
@@ -110,7 +115,6 @@ class _MainScreenState extends State<MainScreen> {
                           }
                         }
                       },
-                      controlAffinity: ListTileControlAffinity.leading,
                     ),
                   ],
                 ),
@@ -131,18 +135,38 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("$label: ", style: TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value)),
+          SizedBox(
+            width: 100, // Adjust width to align all labels
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.left,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(value, style: const TextStyle(color: Colors.black87)),
+          ),
         ],
       ),
     );
   }
 
   Future<void> updateTodoCompleted(MyTodo todo, bool isCompleted) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
     try {
       final response = await http.post(
         Uri.parse('${MyConfig.apiUrl}update_todo_completed.php'),
@@ -152,24 +176,31 @@ class _MainScreenState extends State<MainScreen> {
           'completed': isCompleted.toString(),
         },
       );
-      print("Response: ${response.body}");
+
+      Navigator.pop(context); // Close loading dialog
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Successfully updated completed status.")),
+            const SnackBar(content: Text("✅ Completed status updated.")),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Failed to update: ${data['status']}")),
+            SnackBar(content: Text("❌ Failed to update: ${data['status']}")),
           );
         }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Server error while updating.")),
+        );
       }
     } catch (e) {
+      Navigator.pop(context); // Ensure dialog is closed on exception
       log("Error updating completed: $e");
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Error updating: $e")));
+      ).showSnackBar(SnackBar(content: Text("⚠️ Error updating: $e")));
     }
   }
 
@@ -179,31 +210,52 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MyTodoList'),
-        backgroundColor: Colors.blue,
+        elevation: 2,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF90CAF9), Color(0xFF0D47A1)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: const Text(
+          'MyTodoList',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        centerTitle: true,
+        actionsIconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: const IconThemeData(color: Colors.black87),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: loadTodos),
+          Tooltip(
+            message: 'Refresh',
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                loadTodos(month: selectedMonth, year: selectedYear);
+              },
+            ),
+          ),
+          Tooltip(
+            message: 'Search Todo',
+            child: IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                showTodoDialogSearch();
+              },
+            ),
+          ),
         ],
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text(
-                'Welcome',
-                style: TextStyle(color: Colors.white, fontSize: 20),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
         ),
       ),
+
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -214,6 +266,97 @@ class _MainScreenState extends State<MainScreen> {
               ),
               child: Column(
                 children: [
+                  Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 12.0,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_today, color: Colors.blue),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              decoration: const InputDecoration(
+                                labelText: "Month",
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                              ),
+                              value: selectedMonth,
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    selectedMonth = val;
+                                    currentPage = 1;
+                                  });
+                                  loadTodos(
+                                    month: selectedMonth,
+                                    year: selectedYear,
+                                  );
+                                }
+                              },
+                              items: List.generate(12, (index) {
+                                final month = index + 1;
+                                return DropdownMenuItem(
+                                  value: month,
+                                  child: Text(
+                                    DateFormat.MMMM().format(
+                                      DateTime(0, month),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              decoration: const InputDecoration(
+                                labelText: "Year",
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                              ),
+                              value: selectedYear,
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    selectedYear = val;
+                                    currentPage = 1;
+                                  });
+                                  loadTodos(
+                                    month: selectedMonth,
+                                    year: selectedYear,
+                                  );
+                                }
+                              },
+                              items: List.generate(6, (index) {
+                                final year = DateTime.now().year - 2 + index;
+                                return DropdownMenuItem(
+                                  value: year,
+                                  child: Text('$year'),
+                                );
+                              }),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   if (todoList.isEmpty)
                     Expanded(
                       child: Center(
@@ -309,7 +452,10 @@ class _MainScreenState extends State<MainScreen> {
                                                                 ),
                                                           ),
                                                         );
-                                                        loadTodos();
+                                                        loadTodos(
+                                                          month: selectedMonth,
+                                                          year: selectedYear,
+                                                        );
                                                       },
                                                     ),
                                                   ),
@@ -377,7 +523,10 @@ class _MainScreenState extends State<MainScreen> {
                                 setState(() {
                                   currentPage = index + 1;
                                 });
-                                loadTodos();
+                                loadTodos(
+                                  month: selectedMonth,
+                                  year: selectedYear,
+                                );
                               },
                               child: Text('${index + 1}'),
                             ),
@@ -402,7 +551,7 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
           );
-          loadTodos();
+          loadTodos(month: selectedMonth, year: selectedYear);
         },
         icon: const Icon(Icons.add),
         label: const Text("Add Todo"),
@@ -410,19 +559,23 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  void loadTodos() async {
-    if (isLoading) return; // Prevent multiple calls at once
+  void loadTodos({int? month, int? year}) async {
+    if (isLoading) return;
     setState(() {
       isLoading = true;
       status = "Loading todos...";
     });
 
     try {
-      final response = await http.get(
-        Uri.parse(
-          '${MyConfig.apiUrl}load_todos.php?userid=${widget.userId}&pageno=$currentPage',
-        ),
-      );
+      // Optional query params for filtering by month/year
+      String url =
+          '${MyConfig.apiUrl}load_todos.php?userid=${widget.userId}&pageno=$currentPage';
+
+      if (month != null && year != null) {
+        url += '&month=$month&year=$year';
+      }
+
+      final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -437,7 +590,7 @@ class _MainScreenState extends State<MainScreen> {
           numberOfPage = data['number_of_page'];
           currentPage = data['current_page'];
         } else {
-          status = "No todos found.\nPlease add some todos.";
+          status = "No todos found for selected month.";
         }
       } else {
         status = "Server error ${response.statusCode}";
@@ -485,7 +638,7 @@ class _MainScreenState extends State<MainScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success') {
-          loadTodos();
+          loadTodos(month: selectedMonth, year: selectedYear);
         } else {
           status = "Failed to delete todo.";
           setState(() {});
@@ -494,5 +647,130 @@ class _MainScreenState extends State<MainScreen> {
     } catch (e) {
       log("Delete error: $e");
     }
+  }
+
+  void showTodoDialogSearch() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.search, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Search Todo'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: TextField(
+            controller: searchController,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Todo title',
+              hintText: 'Enter a keyword...',
+              prefixIcon: const Icon(Icons.title),
+              suffixIcon: searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        setState(() {
+                          searchController.clear();
+                        });
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade100,
+            ),
+            onChanged: (_) =>
+                setState(() {}), // Needed to update suffixIcon dynamically
+            onSubmitted: (value) {
+              Navigator.pop(context);
+              final searchTerm = value.trim();
+              if (searchTerm.isNotEmpty) {
+                searchTodos(searchTerm);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Please enter a search term")),
+                );
+              }
+            },
+          ),
+        ),
+        actionsPadding: const EdgeInsets.only(right: 16, bottom: 8),
+        actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.search),
+            label: const Text('Search'),
+            onPressed: () {
+              Navigator.pop(context);
+              final searchTerm = searchController.text.trim();
+              if (searchTerm.isNotEmpty) {
+                searchTodos(searchTerm);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Please enter a search term")),
+                );
+              }
+            },
+          ),
+          TextButton.icon(
+            icon: const Icon(Icons.cancel_outlined),
+            label: const Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void searchTodos(String searchTerm) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          '${MyConfig.apiUrl}load_todos.php'
+          '?userid=${widget.userId}&search=$searchTerm&month=$selectedMonth&year=$selectedYear&current_page=$currentPage',
+        ),
+      );
+      log("Search Response: ${response.body}");
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        todoList.clear();
+
+        if (data['status'] == 'success') {
+          for (var item in data['data']) {
+            todoList.add(MyTodo.fromJson(item));
+          }
+          status = "Todos loaded successfully";
+          numberofResult = data['number_of_result'];
+          numberOfPage = data['number_of_page'];
+          currentPage = data['current_page'];
+        } else {
+          status = "No todos found for search term.";
+        }
+      } else {
+        status = "Server error ${response.statusCode}";
+      }
+    } catch (e) {
+      log("Error searching todos: $e");
+      status = "Failed to search todos.";
+    }
+
+    setState(() {
+      isLoading = false;
+      if (todoList.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No results found for '$searchTerm'")),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Found ${todoList.length} results")),
+        );
+      }
+    });
   }
 }
