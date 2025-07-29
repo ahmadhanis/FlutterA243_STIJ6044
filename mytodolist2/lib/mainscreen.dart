@@ -29,7 +29,7 @@ class _MainScreenState extends State<MainScreen> {
   int selectedMonth = DateTime.now().month;
   int selectedYear = DateTime.now().year;
   final searchController = TextEditingController();
-
+  late double screenWidth, screenHeight;
   @override
   void initState() {
     super.initState();
@@ -207,7 +207,8 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final isWideScreen = MediaQuery.of(context).size.width > 600;
-
+    screenWidth = MediaQuery.of(context).size.width;
+    screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
         elevation: 2,
@@ -264,277 +265,296 @@ class _MainScreenState extends State<MainScreen> {
                 horizontal: 16.0,
                 vertical: 10.0,
               ),
-              child: Column(
-                children: [
-                  Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 12.0,
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.calendar_today, color: Colors.blue),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: DropdownButtonFormField<int>(
-                              decoration: const InputDecoration(
-                                labelText: "Month",
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
+              child: Center(
+                child: SizedBox(
+                  width: isWideScreen ? 600 : double.infinity,
+                  child: Column(
+                    children: [
+                      Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 12.0,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.calendar_today,
+                                color: Colors.blue,
                               ),
-                              value: selectedMonth,
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    selectedMonth = val;
-                                    currentPage = 1;
-                                  });
-                                  loadTodos(
-                                    month: selectedMonth,
-                                    year: selectedYear,
-                                  );
-                                }
-                              },
-                              items: List.generate(12, (index) {
-                                final month = index + 1;
-                                return DropdownMenuItem(
-                                  value: month,
-                                  child: Text(
-                                    DateFormat.MMMM().format(
-                                      DateTime(0, month),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: DropdownButtonFormField<int>(
+                                  decoration: const InputDecoration(
+                                    labelText: "Month",
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
                                     ),
                                   ),
-                                );
-                              }),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonFormField<int>(
-                              decoration: const InputDecoration(
-                                labelText: "Year",
-                                border: OutlineInputBorder(),
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
+                                  value: selectedMonth,
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() {
+                                        selectedMonth = val;
+                                        currentPage = 1;
+                                      });
+                                      loadTodos(
+                                        month: selectedMonth,
+                                        year: selectedYear,
+                                      );
+                                    }
+                                  },
+                                  items: List.generate(12, (index) {
+                                    final month = index + 1;
+                                    return DropdownMenuItem(
+                                      value: month,
+                                      child: Text(
+                                        DateFormat.MMMM().format(
+                                          DateTime(0, month),
+                                        ),
+                                      ),
+                                    );
+                                  }),
                                 ),
                               ),
-                              value: selectedYear,
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    selectedYear = val;
-                                    currentPage = 1;
-                                  });
-                                  loadTodos(
-                                    month: selectedMonth,
-                                    year: selectedYear,
-                                  );
-                                }
-                              },
-                              items: List.generate(6, (index) {
-                                final year = DateTime.now().year - 2 + index;
-                                return DropdownMenuItem(
-                                  value: year,
-                                  child: Text('$year'),
-                                );
-                              }),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  if (todoList.isEmpty)
-                    Expanded(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.inbox,
-                              size: 70,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              status,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DropdownButtonFormField<int>(
+                                  decoration: const InputDecoration(
+                                    labelText: "Year",
+                                    border: OutlineInputBorder(),
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                  ),
+                                  value: selectedYear,
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() {
+                                        selectedYear = val;
+                                        currentPage = 1;
+                                      });
+                                      loadTodos(
+                                        month: selectedMonth,
+                                        year: selectedYear,
+                                      );
+                                    }
+                                  },
+                                  items: List.generate(6, (index) {
+                                    final year =
+                                        DateTime.now().year - 2 + index;
+                                    return DropdownMenuItem(
+                                      value: year,
+                                      child: Text('$year'),
+                                    );
+                                  }),
+                                ),
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    )
-                  else
-                    Expanded(
-                      child: isLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : ListView.separated(
-                              itemCount: todoList.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final todo = todoList[index];
-                                final isCompleted =
-                                    todo.todoCompleted == 'true';
 
-                                return GestureDetector(
-                                  onTap: () => showDetailsDialog(todo),
-                                  child: Card(
-                                    elevation: 3,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
+                      if (todoList.isEmpty)
+                        Expanded(
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.inbox,
+                                  size: 70,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  status,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        Expanded(
+                          child: isLoading
+                              ? const Center(child: CircularProgressIndicator())
+                              : ListView.separated(
+                                  itemCount: todoList.length,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(height: 12),
+                                  itemBuilder: (context, index) {
+                                    final todo = todoList[index];
+                                    final isCompleted =
+                                        todo.todoCompleted == 'true';
+
+                                    return GestureDetector(
+                                      onTap: () => showDetailsDialog(todo),
+                                      child: Card(
+                                        elevation: 3,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Icon(
-                                                isCompleted
-                                                    ? Icons.check_circle
-                                                    : Icons
-                                                          .radio_button_unchecked,
-                                                color: isCompleted
-                                                    ? Colors.green
-                                                    : Colors.orange,
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: Text(
-                                                  todo.todoTitle ?? 'No Title',
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
                                               Row(
-                                                mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  Tooltip(
-                                                    message: "Edit",
-                                                    child: IconButton(
-                                                      icon: const Icon(
-                                                        Icons.edit,
-                                                        color: Colors.blue,
+                                                  Icon(
+                                                    isCompleted
+                                                        ? Icons.check_circle
+                                                        : Icons
+                                                              .radio_button_unchecked,
+                                                    color: isCompleted
+                                                        ? Colors.green
+                                                        : Colors.orange,
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Text(
+                                                      todo.todoTitle ??
+                                                          'No Title',
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w600,
                                                       ),
-                                                      onPressed: () async {
-                                                        await Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder: (_) =>
-                                                                EditTodoScreen(
+                                                    ),
+                                                  ),
+                                                  Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Tooltip(
+                                                        message: "Edit",
+                                                        child: IconButton(
+                                                          icon: const Icon(
+                                                            Icons.edit,
+                                                            color: Colors.blue,
+                                                          ),
+                                                          onPressed: () async {
+                                                            await Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder: (_) => EditTodoScreen(
                                                                   userId: widget
                                                                       .userId!,
                                                                   userEmail: widget
                                                                       .userEmail!,
                                                                   todo: todo,
                                                                 ),
-                                                          ),
-                                                        );
-                                                        loadTodos(
-                                                          month: selectedMonth,
-                                                          year: selectedYear,
-                                                        );
-                                                      },
-                                                    ),
-                                                  ),
-                                                  Tooltip(
-                                                    message: "Delete",
-                                                    child: IconButton(
-                                                      icon: const Icon(
-                                                        Icons.delete,
-                                                        color: Colors.red,
+                                                              ),
+                                                            );
+                                                            loadTodos(
+                                                              month:
+                                                                  selectedMonth,
+                                                              year:
+                                                                  selectedYear,
+                                                            );
+                                                          },
+                                                        ),
                                                       ),
-                                                      onPressed: () =>
-                                                          deleteDialog(todo),
-                                                    ),
+                                                      Tooltip(
+                                                        message: "Delete",
+                                                        child: IconButton(
+                                                          icon: const Icon(
+                                                            Icons.delete,
+                                                            color: Colors.red,
+                                                          ),
+                                                          onPressed: () =>
+                                                              deleteDialog(
+                                                                todo,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ],
                                               ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                todo.todoDesc ?? '',
+                                                style: const TextStyle(
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                'Due: ${df.format(DateTime.parse(todo.todoDate ?? ""))}',
+                                                style: const TextStyle(
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
                                             ],
                                           ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            todo.todoDesc ?? '',
-                                            style: const TextStyle(
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            'Due: ${df.format(DateTime.parse(todo.todoDate ?? ""))}',
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
+                                        ),
                                       ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      SizedBox(height: 10),
+                      if (numberOfPage > 1)
+                        SizedBox(
+                          height: 48,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: numberOfPage,
+                            itemBuilder: (context, index) {
+                              final isSelected = currentPage == index + 1;
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isSelected
+                                        ? Colors.blue
+                                        : Colors.grey[300],
+                                    foregroundColor: isSelected
+                                        ? Colors.white
+                                        : Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
-                    ),
-                  SizedBox(height: 10),
-                  if (numberOfPage > 1)
-                    SizedBox(
-                      height: 48,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: numberOfPage,
-                        itemBuilder: (context, index) {
-                          final isSelected = currentPage == index + 1;
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isSelected
-                                    ? Colors.blue
-                                    : Colors.grey[300],
-                                foregroundColor: isSelected
-                                    ? Colors.white
-                                    : Colors.black,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                  onPressed: () {
+                                    setState(() {
+                                      currentPage = index + 1;
+                                    });
+                                    loadTodos(
+                                      month: selectedMonth,
+                                      year: selectedYear,
+                                    );
+                                  },
+                                  child: Text('${index + 1}'),
                                 ),
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  currentPage = index + 1;
-                                });
-                                loadTodos(
-                                  month: selectedMonth,
-                                  year: selectedYear,
-                                );
-                              },
-                              child: Text('${index + 1}'),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                ],
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             );
           },

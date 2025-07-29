@@ -1,3 +1,3 @@
 class MyConfig {
-  static const String apiUrl = 'http://192.168.0.145/mytodolist/php/';
+  static const String apiUrl = 'https://slumberjer.com/mytodolist/php/';
 }
